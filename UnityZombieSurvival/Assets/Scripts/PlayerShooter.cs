@@ -28,8 +28,7 @@ public class PlayerShooter : MonoBehaviour {
     }
 
     private void Update() {
-        // Legacy InputManager 를 사용하려면 이런식으로 Input 과 Movement를 분리해서 구조 설계를 하는 것이 보통이다.
-
+        // Legacy InputManager 를 사용하려면 이런식으로 Input과 Movement를 분리해서 구조 설계를 하는 것이 보통이다.
         // 입력을 감지하고 총 발사하거나 재장전
         if (playerInput.fire)
         {
@@ -39,12 +38,10 @@ public class PlayerShooter : MonoBehaviour {
         {
             if (gun.Reload())
             {
-                // 재장전 성공 시에만 재장전 애니메이션 재생
                 playerAnimator.SetTrigger("Reload");
             }
         }
 
-        // 남은 탄알 UI 갱신
         UpdateUI();
     }
 
@@ -76,5 +73,6 @@ public class PlayerShooter : MonoBehaviour {
 
         playerAnimator.SetIKPosition(AvatarIKGoal.RightHand, rightHandMount.position);
         playerAnimator.SetIKRotation(AvatarIKGoal.RightHand, rightHandMount.rotation);
+
     }
 }

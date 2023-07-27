@@ -39,11 +39,22 @@ public class Zombie : LivingEntity
 
     private void Awake() {
         // 초기화
+        navMeshAgent = GetComponent<NavMeshAgent>();
+        zombieAnimator = GetComponent<Animator>();
+        zombieAudioPlayer = GetComponent<AudioSource>();
+
+        zombieRenderer = GetComponentInChildren<Renderer>();
     }
 
     // 좀비 AI의 초기 스펙을 결정하는 셋업 메서드
     public void Setup(ZombieData zombieData) {
-        
+        startingHealth = zombieData.health;
+        health = zombieData.health;
+
+        damage = zombieData.damage;
+
+        navMeshAgent.speed = zombieData.speed;
+        zombieRenderer.material.color = zombieData.skinColor;
     }
 
     private void Start() {
@@ -59,26 +70,88 @@ public class Zombie : LivingEntity
     // 주기적으로 추적할 대상의 위치를 찾아 경로 갱신
     private IEnumerator UpdatePath() {
         // 살아 있는 동안 무한 루프
-        while (!dead)
+        while (dead == false)
         {
+            if (hasTarget == true)
+            {
+                navMeshAgent.isStopped = false;
+                navMeshAgent.SetDestination(targetEntity.transform.position);
+            }
+            else
+            {
+                navMeshAgent.isStopped = true;
+
+                Collider[] colliders =
+                    Physics.OverlapSphere(transform.position, 20f, whatIsTarget);
+
+                for (int i = 0; i < colliders.Length; i++)
+                {
+                    LivingEntity livingEntity = colliders[i].GetComponent<LivingEntity>();
+
+                    if (livingEntity != null && livingEntity.dead == false)
+                    {
+                        targetEntity = livingEntity;
+
+                        break;
+                    }
+                }       // loop: whatIsTarget 레이어를 지닌 주변 콜라이더를 모드 순회하는 루프
+            }
+
             // 0.25초 주기로 처리 반복
             yield return new WaitForSeconds(0.25f);
-        }
-    }
+        }       // loop: 좀비가 살아있는 동안 반복하는 루프
+    }       // UpdatePath()
 
     // 데미지를 입었을 때 실행할 처리
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitNormal) {
         // LivingEntity의 OnDamage()를 실행하여 데미지 적용
+
+        if (dead == false)
+        {
+            hitEffect.transform.position = hitPoint;
+            hitEffect.transform.rotation = Quaternion.LookRotation(hitNormal);
+            hitEffect.Play();
+
+            zombieAudioPlayer.PlayOneShot(hitSound);
+        }
+
         base.OnDamage(damage, hitPoint, hitNormal);
-    }
+    }       // OnDamage()
 
     // 사망 처리
     public override void Die() {
         // LivingEntity의 Die()를 실행하여 기본 사망 처리 실행
         base.Die();
+
+        Collider[] zombieColliders = GetComponents<Collider>();
+        for (int i = 0; i < zombieColliders.Length; i++)
+        {
+            zombieColliders[i].enabled = false;
+        }       // loop: 캡슐 콜라이더와 박스 콜라이더를 끄는 루프
+
+        navMeshAgent.isStopped = true;
+        navMeshAgent.enabled = false;
+
+        zombieAnimator.SetTrigger("Die");
+        zombieAudioPlayer.PlayOneShot(deathSound);
     }
 
     private void OnTriggerStay(Collider other) {
         // 트리거 충돌한 상대방 게임 오브젝트가 추적 대상이라면 공격 실행
+
+        if (dead == false && lastAttackTime + timeBetAttack <= Time.time)
+        {
+            LivingEntity attackTarget = other.GetComponent<LivingEntity>();
+
+            if (attackTarget != null && attackTarget == targetEntity)
+            {
+                lastAttackTime = Time.time;
+
+                Vector3 hitPoint = other.ClosestPoint(transform.position);
+                Vector3 hitNormal = transform.position - other.transform.position;
+
+                attackTarget.OnDamage(damage, hitPoint, hitNormal);
+            }
+        }
     }
 }
