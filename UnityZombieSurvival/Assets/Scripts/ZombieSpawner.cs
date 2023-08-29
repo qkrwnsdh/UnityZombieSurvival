@@ -2,7 +2,9 @@
 using UnityEngine;
 
 // 좀비 게임 오브젝트를 주기적으로 생성
-public class ZombieSpawner : MonoBehaviour {
+public class ZombieSpawner : MonoBehaviour
+{
+
     public Zombie zombiePrefab; // 생성할 좀비 원본 프리팹
 
     public ZombieData[] zombieDatas; // 사용할 좀비 셋업 데이터들
@@ -13,10 +15,13 @@ public class ZombieSpawner : MonoBehaviour {
 
     private void Awake()
     {
-        zombieDatas[0] = ResourceManager.instance.zombieData_default;
+        for (int i = 0; i < zombieDatas.Length; i++)
+        {
+            zombieDatas[i] = ResourceManager.instance.zombieData_default[i];
+        }
     }
-
-    private void Update() {
+    private void Update()
+    {
         // 게임 오버 상태일때는 생성하지 않음
         if (GameManager.instance != null && GameManager.instance.isGameover)
         {
@@ -34,13 +39,15 @@ public class ZombieSpawner : MonoBehaviour {
     }
 
     // 웨이브 정보를 UI로 표시
-    private void UpdateUI() {
+    private void UpdateUI()
+    {
         // 현재 웨이브와 남은 적 수 표시
         UIManager.instance.UpdateWaveText(wave, zombies.Count);
     }
 
     // 현재 웨이브에 맞춰 좀비들을 생성
-    private void SpawnWave() {
+    private void SpawnWave()
+    {
 
         wave += 1;
 
@@ -53,7 +60,8 @@ public class ZombieSpawner : MonoBehaviour {
     }
 
     // 좀비를 생성하고 생성한 좀비에게 추적할 대상을 할당
-    private void CreateZombie() {
+    private void CreateZombie()
+    {
 
         ZombieData zombieData = zombieDatas[Random.Range(0, zombieDatas.Length)];
 
